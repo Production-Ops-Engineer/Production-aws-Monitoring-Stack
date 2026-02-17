@@ -1,0 +1,55 @@
+version: "3"
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: monitoring-grafana-1
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./blackbox-alerts.yml:/etc/prometheus/blackbox-alerts.yml
+    ports:
+      - "9090:9090"
+
+
+
+  jaeger:
+    image: jaegertracing/all-in-one
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+app:
+    image: kennethreitz/httpbin
+    ports:
+      - "5000:80"
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    ports:
+      - "9100:9100"
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/blackbox/blackbox.yml"
+    restart: unless-stopped
+
+volumes:
+  grafana-data:
